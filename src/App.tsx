@@ -3,12 +3,14 @@ import "./index.css";
 import Matchmaking from "./components/Matchmaking";
 import Janken from "./components/Janken";
 import Result from "./components/Results";
-enum GameState {
-  WAITING,
-  MATCHED,
-  PLAYING,
-  RESULT,
-}
+const GameState = {
+  WAITING: "WAITING",
+  MATCHED: "MATCHED",
+  PLAYING: "PLAYING",
+  RESULT: "RESULT",
+} as const;
+
+type GameState = typeof GameState[keyof typeof GameState];
 
 export default function App() {
   const [gameState, setGameState] = useState<GameState>(GameState.WAITING);
