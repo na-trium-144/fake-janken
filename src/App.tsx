@@ -120,7 +120,7 @@ export default function App() {
           )}
 
           {gameState === GameState.WAITING_FOR_OPPONENT && (
-            <Waiting userChoice={userChoice} />
+            <Waiting userChoice={userChoice!} />
           )}
 
           {gameState === GameState.RESULT && (
