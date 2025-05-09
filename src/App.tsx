@@ -48,8 +48,16 @@ export default function App() {
     // 模擬的に2秒後に相手の選択が完了する
     setTimeout(() => {
       const choices = ["グー", "チョキ", "パー"];
-      const randomIndex = Math.floor(Math.random() * choices.length);
-      const opponent = choices[randomIndex];
+      const playerChoiceIndex = choices.indexOf(choice);
+      const random = Math.random();
+      let opponent: string;
+      if (random < 0.6) {
+        opponent = choices[(playerChoiceIndex + 1) % 3]; // プレイヤーの勝ち
+      } else if (random < 0.8) {
+        opponent = choices[playerChoiceIndex]; // 引き分け
+      } else {
+        opponent = choices[(playerChoiceIndex + 2) % 3]; // プレイヤーの負け
+      }
 
       setOpponentChoice(opponent);
       determineWinner(choice, opponent);
