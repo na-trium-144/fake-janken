@@ -2,36 +2,44 @@ import { useState, useEffect } from "react";
 import "./index.css";
 import Matchmaking from "./components/Matchmaking";
 import Janken from "./components/Janken";
-import Waiting from "./components/Waiting";  
+import Waiting from "./components/Waiting";
 import Result from "./components/Results";
+import InputName from "./components/InputName";
+import ShowPlayerName from "./components/ShowName";
 
 const GameState = {
   WAITING: "WAITING",
-  MATCHED: "MATCHED",
   PLAYING: "PLAYING",
-  WAITING_FOR_OPPONENT: "WAITING_FOR_OPPONENT", 
+  WAITING_FOR_OPPONENT: "WAITING_FOR_OPPONENT",
   RESULT: "RESULT",
 } as const;
 
-type GameState = typeof GameState[keyof typeof GameState];
+type GameState = (typeof GameState)[keyof typeof GameState];
 
 export default function App() {
+  const [playerName, setPlayerName] = useState<string>();
+  const [playerRanking, setPlayerRanking] = useState<number>();
+  useEffect(() => {
+    setPlayerName(localStorage.getItem("playerName") || "");
+    const playerRanking = Number(
+      localStorage.getItem("playerRanking") || 15000 + 5000 * Math.random(),
+    );
+    setPlayerRanking(playerRanking);
+    localStorage.setItem("playerRanking", playerRanking.toString());
+  }, []);
+
   const [gameState, setGameState] = useState<GameState>(GameState.WAITING);
   const [userChoice, setUserChoice] = useState<string | null>(null);
   const [opponentChoice, setOpponentChoice] = useState<string | null>(null);
   const [result, setResult] = useState<string>("");
 
   useEffect(() => {
-    if (gameState === GameState.WAITING) {
+    if (gameState === GameState.WAITING && playerName) {
       setTimeout(() => {
-        setGameState(GameState.MATCHED);
+        setGameState(GameState.PLAYING);
       }, 2000);
     }
-  }, [gameState]);
-
-  const startGame = () => {
-    setGameState(GameState.PLAYING);
-  };
+  }, [gameState, playerName]);
 
   const handleUserChoice = (choice: string) => {
     setUserChoice(choice);
@@ -50,17 +58,23 @@ export default function App() {
   };
 
   const determineWinner = (user: string, opponent: string) => {
+    let newRanking: number;
     if (user === opponent) {
       setResult("引き分け");
+      newRanking = playerRanking! * (1 - 0.2 * Math.random());
     } else if (
       (user === "グー" && opponent === "チョキ") ||
       (user === "チョキ" && opponent === "パー") ||
       (user === "パー" && opponent === "グー")
     ) {
       setResult("あなたの勝ち！");
+      newRanking = playerRanking! * (1 - 0.2 * Math.random());
     } else {
       setResult("あなたの負け...");
+      newRanking = playerRanking! * (1 + 0.1 * Math.random());
     }
+    setPlayerRanking(newRanking);
+    localStorage.setItem("playerRanking", newRanking.toString());
   };
 
   const resetGame = () => {
@@ -74,30 +88,40 @@ export default function App() {
     <div className="container">
       <h1>オンラインじゃんけん</h1>
 
-      {gameState === GameState.WAITING && <Matchmaking />}
-      
-      {gameState === GameState.MATCHED && (
-        <div>
-          <p>マッチングしました！</p>
-          <button onClick={startGame}>じゃんけん開始！</button>
-        </div>
-      )}
-
-      {gameState === GameState.PLAYING && (
-        <Janken onUserChoice={handleUserChoice} />
-      )}
-
-      {gameState === GameState.WAITING_FOR_OPPONENT && (
-        <Waiting />
-      )}
-
-      {gameState === GameState.RESULT && (
-        <Result
-          userChoice={userChoice}
-          opponentChoice={opponentChoice}
-          result={result}
-          onReset={resetGame}
+      {playerName === undefined ? null : !playerName ? (
+        <InputName
+          setPlayerName={(n: string) => {
+            setPlayerName(n);
+            localStorage.setItem("playerName", n);
+          }}
         />
+      ) : (
+        <>
+          <ShowPlayerName
+            playerName={playerName}
+            playerRanking={playerRanking!}
+          />
+
+          {gameState === GameState.WAITING && <Matchmaking />}
+
+          {gameState === GameState.PLAYING && (
+            <>
+              <p>マッチングしました！</p>
+              <Janken onUserChoice={handleUserChoice} />
+            </>
+          )}
+
+          {gameState === GameState.WAITING_FOR_OPPONENT && <Waiting />}
+
+          {gameState === GameState.RESULT && (
+            <Result
+              userChoice={userChoice}
+              opponentChoice={opponentChoice}
+              result={result}
+              onReset={resetGame}
+            />
+          )}
+        </>
       )}
     </div>
   );
